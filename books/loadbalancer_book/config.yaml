@@ -1,0 +1,8 @@
+title: "入門負荷分散"
+summary: "負荷分散の基礎知識"
+topics: ["負荷分散", "network"]
+published: false
+price: 0 # 有料の場合200〜5000
+# 本に含めるチャプターを順番に並べましょう
+chapters:
+  - introduction
