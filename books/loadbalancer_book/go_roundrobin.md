@@ -89,7 +89,7 @@ package main
  	"net/http"
  )
  
- func roundrobin(hostnumber int)int{
+ func roundrobin(hostnumber int) int {
  	switch hostnumber {
  	case 0:
  		return 1
@@ -109,7 +109,9 @@ package main
  	http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
  		resp, err := http.Get("http://"+hosts[hostnumber]+"/")
  		if err != nil {
- 		// handle error
+ 			// handle error
+			http.Error(w, "Internal Server Error", http.StatusInternalServerError)
+ 			return
  		}
  		defer resp.Body.Close()
  		body, err := io.ReadAll(resp.Body)
@@ -154,16 +156,22 @@ package main
  		hostnumber, err := strconv.ParseUint(hexString[:16], 16, 64)
  		if err != nil {
  			// handle error
+			http.Error(w, "Internal Server Error", http.StatusInternalServerError)
+ 			return
  		}
  		index := hostnumber % uint64(len(hosts))
  		resp, err := http.Get("http://" + hosts[index] + "/")
  		if err != nil {
  			// handle error
+			http.Error(w, "Internal Server Error", http.StatusInternalServerError)
+ 			return
  		}
  		defer resp.Body.Close()
  		body, err := io.ReadAll(resp.Body)
  		if err != nil {
  			// handle error
+			http.Error(w, "Internal Server Error", http.StatusInternalServerError)
+ 			return
  		}
  		//numberStr := strconv.FormatUint(hostnumber, 10)
  		numberStr := strconv.FormatUint(index, 10)
@@ -236,11 +244,15 @@ package main
  		resp, err := http.Get("http://" + hosts[index] + "/")
  		if err != nil {
  			// handle error
+			http.Error(w, "Internal Server Error", http.StatusInternalServerError)
+ 			return
  		}
  		defer resp.Body.Close()
  		body, err := io.ReadAll(resp.Body)
  		if err != nil {
  			// handle error
+			http.Error(w, "Internal Server Error", http.StatusInternalServerError)
+ 			return
  		}
  		w.Write(body)
  
@@ -283,7 +295,7 @@ package main
  					//atomic.AddUint64(&counts[idx], 1)
  				// 接続が閉じられた・ハイジャックされたときは、最後に念のためマップから削除
  				case http.StateClosed, http.StateHijacked:
- 					atomic.AddUint64(&counts[idx], ^uint64(0))
+ 					atomic.AddUint64(&counts[idx], decrementUint64)
  					connBackend.Delete(conn)
  				}
  			}
