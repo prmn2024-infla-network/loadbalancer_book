@@ -58,23 +58,23 @@ IPMininetを用いて実際にGSLBシステムを構築し、各技術要素の�
 実装の環境は仮想ネットワーク上で再現します。
 構成としては
 
--・gslb.py（ネットワークトポロジー）
--・dns_configs/
-  -・named.conf.options
-  -・named.conf.local
-  -・db.service.example.jp
-  -・db.service.example.us
-  -・db.service.example.jp.template
-  -・db.service.example.us.template
-  -・db.root
--・health_checker.py
--・frr_gslb_configs/
- 　-・bg_jp.conf
- 　-・bg_us.conf
- 　-・global1.conf
- 　-・global2.conf
- 　-・r1.conf
- 　-・r2.conf
+- ・gslb.py（ネットワークトポロジー）
+- ・dns_configs/
+  -　・named.conf.options
+  -　・named.conf.local
+  -　・db.service.example.jp
+  -　・db.service.example.us
+  -　・db.service.example.jp.template
+  -　・db.service.example.us.template
+  -　・db.root
+-　・health_checker.py
+-　・frr_gslb_configs/
+ 　-　・bg_jp.conf
+ 　-　・bg_us.conf
+ 　-　・global1.conf
+ 　-　・global2.conf
+ 　-　・r1.conf
+ 　-　・r2.conf
 
 ネットワーク図は以下の通りです。
 [https://scrapbox.io/files/68cffc98832b26ed7b3d7e3f.png]
@@ -84,34 +84,34 @@ IPMininetを用いて実際にGSLBシステムを構築し、各技術要素の�
 #### gslb.py
 役割: ネットワークトポロジーの構築と初期設定
 
--・IPMininetでBGPルーティング対応ネットワークを作成
--・3つのAS（200:日本、201:米国、100:グローバル）を定義
--・ルータ、サーバー、クライアントの配置
--・BGP設定ファイルの配布とサービス起動
--・BIND9とヘルスチェッカーの自動起動
+-　・IPMininetでBGPルーティング対応ネットワークを作成
+-　・3つのAS（200:日本、201:米国、100:グローバル）を定義
+-　・ルータ、サーバー、クライアントの配置
+-　・BGP設定ファイルの配布とサービス起動
+-　・BIND9とヘルスチェッカーの自動起動
 
 #### health_checker.py
 役割: サーバー監視と自動フェイルオーバー
 
--・5秒間隔でWebサーバーの死活監視
--・障害検知時のDNSゾーンファイル自動更新
--・地域別優先順位に基づくサーバー選択
--・BIND9への設定反映（rndc reload）
+-　・5秒間隔でWebサーバーの死活監視
+-　・障害検知時のDNSゾーンファイル自動更新
+-　・地域別優先順位に基づくサーバー選択
+-　・BIND9への設定反映（rndc reload）
 
 ### DNS設定ファイル群
 #### named.conf.local
 役割: 地理的DNS分散の中核設定
 
--・ACL定義：jp-clients (192.168.1.0/24), us-clients (192.168.2.0/24)
--・ビュー定義：jp-view（日本向け）, us-view（米国向け）
--・各ビューでの異なるゾーンファイル指定
+-　・ACL定義：jp-clients (192.168.1.0/24), us-clients (192.168.2.0/24)
+-　・ビュー定義：jp-view（日本向け）, us-view（米国向け）
+-　・各ビューでの異なるゾーンファイル指定
 
 #### named.conf.options
 役割: BIND9サーバーの基本設定
 
--・動作ディレクトリ：/var/cache/bind
--・待ち受けアドレス：127.0.0.1, 192.168.1.100
--・再帰問い合わせの許可設定
+-　・動作ディレクトリ：/var/cache/bind
+-　・待ち受けアドレス：127.0.0.1, 192.168.1.100
+-　・再帰問い合わせの許可設定
 
 ### ゾーンファイル群
 #### db.service.example.jp
@@ -127,41 +127,41 @@ IPMininetを用いて実際にGSLBシステムを構築し、各技術要素の�
 #### db.service.example.jp.template
 役割: 日本ビュー用の動的更新テンプレート
 
--・@SERIAL@: タイムスタンプで自動更新
--・@WWW_A_RECORDS@: health_checker.pyが動的に置換
+-　・@SERIAL@: タイムスタンプで自動更新
+-　・@WWW_A_RECORDS@: health_checker.pyが動的に置換
 
 #### db.service.example.us.template
 役割: 米国ビュー用の動的更新テンプレート
 
--・同様のプレースホルダー構造
+-　・同様のプレースホルダー構造
 
 #### db.root
 役割: ルートDNSサーバー情報
 
--・インターネットのルートネームサーバー一覧
--・再帰問い合わせ時に使用
+-　・インターネットのルートネームサーバー一覧
+-　・再帰問い合わせ時に使用
 
 ### BGP設定ファイル群
 #### r1.conf, r2.conf
 役割: エッジルータの設定
 
--・クライアント側ルータ（AS200, AS201）
--・クライアントネットワークの広告
--・上位BGPルータとのiBGP接続
+-　・クライアント側ルータ（AS200, AS201）
+-　・クライアントネットワークの広告
+-　・上位BGPルータとのiBGP接続
 
 #### bg_jp.conf, bg_us.conf
 役割: 地域BGPルータの設定
 
--・AS間接続の中継点
--・eBGP/iBGPピアリング設定
--・経路の再配布
+-　・AS間接続の中継点
+-　・eBGP/iBGPピアリング設定
+-　・経路の再配布
 
 #### global1.conf, global2.conf
 役割: サーバー側BGPルータの設定
 
--・Webサーバーへの接続
--・サーバーネットワーク（10.0.1.0/24, 10.0.2.0/24）の広告
--・AS100内のiBGP設定
+-　・Webサーバーへの接続
+-　・サーバーネットワーク（10.0.1.0/24, 10.0.2.0/24）の広告
+-　・AS100内のiBGP設定
 
 実行手順は、ネットワークを起動し、DNSサーバーとヘルスチェッカーを開始することで実行できます。
 実行結果は、各クライアントからのDNS問い合わせで確認可能です。
@@ -282,9 +282,9 @@ IPMininetを用いて実際にGSLBシステムを構築し、各技術要素の�
 ## まとめ
 本記事では、以下の3種類の広域負荷分散技術要素について、実装例とともに解説しました。
 
--・DNS制御機能:シンプルで実装が容易。既存インフラを活用可能。
--・ヘルスチェック機能:高可用性とフェイルオーバー機能を提供。
--・負荷分散アルゴリズム:地理的最適化によるパフォーマンス向上。
+-　・DNS制御機能:シンプルで実装が容易。既存インフラを活用可能。
+-　・ヘルスチェック機能:高可用性とフェイルオーバー機能を提供。
+-　・負荷分散アルゴリズム:地理的最適化によるパフォーマンス向上。
 
 それぞれの特性を理解し、用途やシステム要件に応じて適切な構成を選択することが重要です。
 
