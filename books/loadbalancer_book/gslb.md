@@ -57,25 +57,25 @@ IPMininetを用いて実際にGSLBシステムを構築し、各技術要素の�
 
 実装の環境は仮想ネットワーク上で再現します。
 構成としては
-
-- ・gslb.py（ネットワークトポロジー）
-- ・dns_configs/
-  -　・named.conf.options
-  -　・named.conf.local
-  -　・db.service.example.jp
-  -　・db.service.example.us
-  -　・db.service.example.jp.template
-  -　・db.service.example.us.template
-  -　・db.root
--　・health_checker.py
--　・frr_gslb_configs/
- 　-　・bg_jp.conf
- 　-　・bg_us.conf
- 　-　・global1.conf
- 　-　・global2.conf
- 　-　・r1.conf
- 　-　・r2.conf
-
+```
+gslb.py（ネットワークトポロジー）
+dns_configs/
+├── named.conf.options
+├── named.conf.local  
+├── db.service.example.jp
+├── db.service.example.us
+├── db.service.example.jp.template
+├── db.service.example.us.template
+└── db.root
+health_checker.py
+frr_gslb_configs/
+├── bg_jp.conf
+├── bg_us.conf
+├── global1.conf
+├── global2.conf
+├── r1.conf
+└── r2.conf
+```
 ネットワーク図は以下の通りです。
 [https://scrapbox.io/files/68cffc98832b26ed7b3d7e3f.png]
 
