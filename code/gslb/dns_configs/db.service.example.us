@@ -1,0 +1,11 @@
+$TTL    10
+@       IN      SOA     ns1.service.example. root.service.example. (
+                        2024080601      ; Serial
+                        10              ; Refresh
+                        10              ; Retry
+                        10              ; Expire
+                        10 )            ; Negative Cache TTL
+;
+@       IN      NS      ns1.service.example.
+ns1     IN      A       192.168.1.100
+www     IN      A       10.0.2.10      ; 米国のクライアントにはserver2のIPを返す

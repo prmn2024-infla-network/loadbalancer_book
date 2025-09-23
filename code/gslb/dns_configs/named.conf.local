@@ -1,0 +1,52 @@
+// アクセスコントロールリスト(ACL)の定義
+  acl "jp-clients" { 192.168.1.0/24; };
+  acl "us-clients" { 192.168.2.0/24; };
+  
+  // 日本クライアント用 (client1) View
+ 
+  view "jp-view" {
+      match-clients { "jp-clients"; };
+      recursion yes;
+  
+      //  このViewに必須のゾーン定義 
+      zone "." IN { type hint; file "/etc/bind/db.root"; };
+      zone "localhost" IN { type master; file "/etc/bind/db.local"; allow-update { none; }; };
+      zone "127.in-addr.arpa" IN { type master; file "/etc/bind/db.127"; allow-update { none; }; };
+  
+      // GSLB用のゾーン定義 
+      zone "service.example" {
+          type master;
+          file "/etc/bind/db.service.example.jp"; // 日本サーバーのIPを返す
+          allow-update { none; };
+      };
+  };
+  
+  // USクライアント用 (client2) View
+
+  view "us-view" {
+      match-clients { "us-clients"; };
+      recursion yes;
+  
+      // このViewに必須のゾーン定義 
+      zone "." IN { type hint; file "/etc/bind/db.root"; };
+      zone "localhost" IN { type master; file "/etc/bind/db.local"; allow-update { none; }; };
+      zone "127.in-addr.arpa" IN { type master; file "/etc/bind/db.127"; allow-update { none; }; };
+  
+      // GSLB用のゾーン定義 
+      zone "service.example" {
+          type master;
+          file "/etc/bind/db.service.example.us"; // USサーバーのIPを返す
+          allow-update { none; };
+      };
+  };
+  
+  // 上記に一致しない全てのクライアント用 (DNSサーバ自身など) View
+  view "catch-all" {
+      match-clients { any; };
+      recursion yes; // 通常のキャッシュDNSとして機能
+  
+      //  このViewに必須のゾーン定義 
+      zone "." IN { type hint; file "/etc/bind/db.root"; };
+      zone "localhost" IN { type master; file "/etc/bind/db.local"; allow-update { none; }; };
+      zone "127.in-addr.arpa" IN { type master; file "/etc/bind/db.127"; allow-update { none; }; };
+ };
