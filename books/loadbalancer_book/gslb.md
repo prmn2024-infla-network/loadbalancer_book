@@ -75,6 +75,16 @@ frr_gslb_configs/
 ├── r1.conf
 └── r2.conf
 ```
+
+### コードファイルの入手
+
+本演習で使用するコードファイルは以下から入手できます：
+
+- [GitHubリポジトリ](https://github.com/prmn2024-infla-network/loadbalancer_book/tree/main/code/gslb)
+- [ZIPダウンロード](https://github.com/prmn2024-infla-network/loadbalancer_book/archive/refs/heads/main.zip)
+
+ZIPをダウンロード後、`code/gslb/` ディレクトリ内のファイルをご利用ください。
+
 ネットワーク図は以下の通りです。
 ![ネットワーク図](https://scrapbox.io/files/68cffc98832b26ed7b3d7e3f.png)
 *図4:ネットワーク図*
