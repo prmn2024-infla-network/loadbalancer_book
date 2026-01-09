@@ -21,6 +21,31 @@ VRRPを利用することで物理的な複数のルータを一つの仮想的�
 ![障害発生時](/images/VRRP/abnormal.png)
 *図2：障害が発生時のVRRPを用いたロードバランサーの挙動*
 
+## VRRPの詳細な動作
+VRRPでは、複数のロードバランサを一つの仮想的なロードバランサとしてみなし、クライアントがその仮想的なロードバランサにアクセスしようとすることで動作します。そのため、実際のロードバランサが持つものとは別に、仮想的なものであるVirtual IPアドレスとVirtual MACアドレスというものがあります。IPアドレスはネットワーク上における住所のようなものであり、MACアドレスは、機器が持つ固有の識別番号です。
+
+以下の図のようなDocker上の構成においての動作を説明していきます。
+
+![VRRPの動作](/images/VRRP/vrrp_failover.png)
+*図3：VRRPの詳細な動作*
+
+クライアントがVirtual IPアドレスにアクセスをする際、まず、どのロードバランサに接続するのかを確認することから始まります。このVitural IPアドレスから機器固有の識別番号であるVirtual MACアドレスを得るためにARPリクエストというものを送信します。ARPとは「Address Resolution Protocol」の略称であり、IPアドレスからMACアドレスに変換するためのプロトコルです。このAPRリクエストはVRRPの仕様上、MASTERコンテナが応答し、Docker Engineが仲介します。Docker Engineはスイッチのような動作を振る舞うのではと想定しています。
+ARPリクエストを付け取ったMASTERコンテナは、その応答として自身のMACアドレスとVirtual MACアドレスをARPレスポンスとしてDocker Engineに流します。Docker EngineはMACアドレステーブルという形で、Vitual MACアドレスとロードバランサコンテナのMACアドレスの対応表を持ちます。アクセスが来た際には、このVirtual MACアドレスに対応するロードバランサにアクセスを振ることで対応します。
+最終的にクライアントまでARPレスポンスであるVitual MACアドレスを返すことで、クライアントのARPリクエストを完了とします。これにより、Vitual IPアドレスにアクセスすることが可能となります。あくまで、クライアントに返ってくるMACアドレスはVirtual MACアドレスであるため、クライアントはがアクセスするロードバランサがMASTERコンテナなのかBACKUPコンテナなのかを意識するせずに通信することになります。
+次に、実際にアクセスをしていきます。Vitural IPアドレスにアクセスすると、先ほど入手したVitural MACアドレス宛にリクエストを送ります。Docker Engineが仲介し、Vitural MACアドレスに対応するMACアドレスのロードバランサコンテナへアクセスを流します。そこからは、ロードバランサに設定された振り分け方式に従って、サーバコンテナにアクセスを振り分けます。応答したサーバからコンテンツが返ってきて、クライアントまで届けられます。
+
+**フェイルオーバー**
+VRRPの機能であるフェイルオーバー時はBACKUPコンテナがVirtual MACアドレスを引き継ぎ、応答するようになります。
+まず、MASTERコンテナは定期的にVRRPアドバタイズメントという通信をBACKUPコンテナに送信しています。MASTERコンテナに障害が発生するとBACKUPコンテナにVRRPアドバタイズメントを送信することができなくなります。そのため、BACKPUコンテナ側は、MASTERコンテナから一定時間VRRPアドバタイズメントを受信できない場合、MASTERコンテナ側に障害が発生したと判断してMASTERコンテナに切り替わって処理を行うようになります。なお、BACKUPコンテナからMASTERコンテナへとVRRPアドバタイズメントを送信しないため、MASTERコンテナはBACKUPコンテナを認識することができません。
+VRRPアドバタイズメントが途切れ、BACKUPコンテナがMASTERコンテナに障害が発生したと判断すると、Vitual MACアドレスを引き継ぎ、即座にGARPをDocker Engineに送信します。GARPとは「Gratuitous ARP」というARPパケットの一種であり、次の二つの役割を持つプロトコルです。
+- 自分自身に設定するIPアドレスが重複していないかどうかを検出する
+- 同一セグメントのネットワーク機器上のARPキャッシュを更新させる
+
+このGARPをDocker Engineに送信することで、Docker Engineが持つMACアドレステーブルを書き換えます。もともとVitural MACアドレスには、MASTERコンテナのMACアドレスが対応していたが、クライアントからのリクエストがダウンしているMASTERコンテナに流れないようにBACKUPコンテナのMACアドレスに書き換えます。これにより、MASTERコンテナに障害が発生した際のフェイルオーバーが完了となります。
+
+ダウンしたロードバランサの障害が解消し、復帰する際、BACKUPコンテナへのフェイルオーバー時と同様の形式でフェイルオーバーを行います。復帰するロードバランサに設定したpriorityが現在動作しているロードバランサのpriorityよりも高い場合、復帰するロードバランサがMASTERコンテナとして動作するために、GARPをDocker Engineに送信します。Vitural MACアドレスと動作するロードバランサのMACアドレスの対応を書き換え、クライアントからのリクエストを受け取れるようにします。復帰するロードバランサのpriorityが動作しているロードバランサのpriorityよりも低い場合は、そのままBACKUPコンテナとして復帰します。
+
+
 ## 演習1
 配布しているファイルを用いて、VRRPを用いたロードバランサーを実装できるように構成されています。
 
@@ -42,6 +67,8 @@ VRRPを利用することで物理的な複数のルータを一つの仮想的�
     - backup.conf
     - start_nginx.sh
     - stop_nginx.sh
+- client
+    - Dockerfile
 - server1
     - Dockerfile
     - index.html
@@ -73,16 +100,15 @@ masterコンテナのロードバランサーがmaster状態で、backupコン�
 ```
 
 ## 演習2
-masterコンテナとbackupコンテナの両方から仮想ipアドレス`192.168.1.100`へcurlコマンドを用いたリクエストを送ってみましょう。
+clientコンテナから仮想ipアドレス`192.168.1.100`へcurlコマンドを用いたリクエストを送ってみましょう。
 `docker desktop`の画面のコンテナにある`Exec`での入力
 または
 ```sh
-docker exec -it vrrp-master-1 bash
+docker exec -it vrrp-client-1 bash
 ```
 で該当のコンテナに入力ができます
 
-- master
-``` master.sh
+``` client.sh
 / # curl 192.168.1.100
 <html>
   <body>
@@ -109,13 +135,7 @@ docker exec -it vrrp-master-1 bash
 </html>
 ```
 
-- backup
-``` backup.sh
-/ # curl 192.168.1.100
-curl: (7) Failed to connect to 192.168.1.100 port 80 after 21066 ms: Could not connect to server
-```
-
-この結果よりmaster状態のmasterコンテナだけがアクティブな状態であることが確認できます
+この結果よりclientからの`curl`リクエストが各サーバにラウンドロビン方式で分散されていることが確認できます
 
 ## 演習3
 masterコンテナを停止させてbackupコンテナがmaster状態に昇格することを確認しましょう
